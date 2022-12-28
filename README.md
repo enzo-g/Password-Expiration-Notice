@@ -8,4 +8,6 @@ The script will then send them an email to notify them, and finally send the log
 
 Execute the following command to find the "Time Zone ID"
 
+```powershell
 [timezoneinfo]::GetSystemTimeZones() | select displayname, id
+```
