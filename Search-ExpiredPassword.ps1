@@ -4,9 +4,8 @@ function Search-ExpiredPassword {
         [Parameter(Mandatory)]
         [string]
         $DC,
-        [Parameter(Mandatory)]
         [string]
-        $LogFileName,
+        $LogFileName = "ExpirationNotice_" ,
         [Parameter(Mandatory)]
         [string]
         $LogFileDirectory,
@@ -15,13 +14,12 @@ function Search-ExpiredPassword {
         $MonitoringEmail,
         [Parameter(Mandatory)]
         [string]
-        $Attachment,
+        $Guide,
         [Parameter(Mandatory)]
         [string]
         $EmailHTML,
-        [Parameter(Mandatory)]
         [string]
-        $TimeZoneId,
+        $TimeZoneId = "UTC",
         [Parameter()]
         [string]
         $LogSubject = "Password Expiration Notice - LOGs for $Now",
@@ -31,13 +29,34 @@ function Search-ExpiredPassword {
         [Parameter()]
         [int]
         $StartNotif = 7,
-		[Parameter(Mandatory)]
 		[ValidateSet("Yes","No")]
         [string]
-        $DebugMode,
+        $DebugMode = "No",
         [Parameter()]
         [string]
-        $DebugEmail = "it_apac_monitoring@keywordsstudios.com"
+        $DebugEmail = "mailme@example.com",
+        [Parameter(Mandatory)]
+        [string]
+        $SA_Username,
+        [Parameter(Mandatory)]
+        [securestring]
+        $SA_Password,
+        [string]
+        $SMTP_Username,
+        [securestring]
+        $SMTP_Password,
+        [Parameter(Mandatory)]
+        [string]
+        $SMTP_srv,
+        [Parameter(Mandatory)]
+        [string]
+        $SMTP_prt,
+        [Parameter(Mandatory)]
+        [string]
+        $SMTP_from,
+        [Parameter(Mandatory)]
+        [string]
+        $EmailSubject
     )
 
     #Force TLS 1.2 as security protocol to use with (send-mailmessage)
@@ -45,18 +64,18 @@ function Search-ExpiredPassword {
 
     #Email settings - Common for any email send
     $smtpsettings = @{
-        from = "it_apac_noreply@keywordsstudios.com";
-        smtp_server = "smtp.office365.com";
-        smtp_port = 587;
-        subject = "Password Expiration Notice";
-        user = $env:useritapacnoreply;
-        password = ConvertTo-SecureString $env:passitapacnoreply -AsPlainText -Force;
+        from = $SMTP_from;
+        smtp_server = $SMTP_srv;
+        smtp_port = $SMTP_prt;
+        subject = $EmailSubject;
+        user = $SMTP_Username;
+        password = $SMTP_Password;
     }
     $CredentialEmail = New-Object System.Management.Automation.PSCredential $smtpsettings["user"], $smtpsettings["password"]
 
     #Credential of User that connect to AD to scan users 
-    $UserScan = $env:uname
-    $PasswordScan = ConvertTo-SecureString $env:passw -AsPlainText -Force
+    $UserScan = $SA_Username
+    $PasswordScan = $SA_Password
     $Credential = New-Object System.Management.Automation.PSCredential $UserScan,$PasswordScan
     
     #We start to warn the user 7 days in advance by default
@@ -67,8 +86,8 @@ function Search-ExpiredPassword {
     #Log file
     $LogFile = $LogFileDirectory + $LogFileName + "_maillog" + $logdate + ".txt"
 	New-item $LogFile -Force
+    
     #Content of the email sent to the user
-    $AttachmentO365 = $Attachment
     $html = Get-Content -encoding UTF8 -path $EmailHTML
 
     #Display the corresponding UTC of the timezone, in the email that we are sending to the user.
@@ -85,30 +104,37 @@ function Search-ExpiredPassword {
     Select-Object -Property "DisplayName", "EmailAddress", `
     @{Name = "PasswordExpiry"; Expression = {[datetime]::FromFileTime($_."msDS-UserPasswordExpiryTimeComputed") }}
 
-    foreach ($u1 in $UsersAD){
+    foreach ($t_user in $UsersAD){
         #If expiration date minus warndate is less than 7 and more than 0 we send an email to user.
         #We don't send email to users with a password already expired.
-        $ndays = $WarnDate - $u1.PasswordExpiry 
+        $ndays = $WarnDate - $t_user.PasswordExpiry 
         if (($ndays -lt "7") -and ($ndays -gt "0")) {
             #Convert date of expiration to correspond to the timezone.
-            $u2 = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId($u1.PasswordExpiry, $TimeZoneId)
+            $time1 = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId($t_user.PasswordExpiry, $TimeZoneId)
+            
             #Format the date as we want it to be displayed for end-users
-            $u3 = $u2.ToString("dddd dd/MM/yyyy HH:mm '$UTCvalue'")
+            $time2 = $time1.ToString("dddd dd/MM/yyyy HH:mm '$UTCvalue'")
+            
             #Debug 
-            if ($DebugMode -eq "Yes"){ $u1.EmailAddress = $DebugEmail }
+            if ($DebugMode -eq "Yes"){ $t_user.EmailAddress = $DebugEmail }
+            
             #Send message to user
             Send-MailMessage -UseSsl -Encoding UTF8 -credential $CredentialEmail `
-            -SmtpServer $smtpsettings["smtp_server"] -Port $smtpsettings["smtp_port"] -To $u1.EmailAddress `
-            -From $smtpsettings["from"] -Subject $smtpsettings["subject"] -Attachment $AttachmentO365 `
-            -BodyAsHtml ($html -f $u1.DisplayName, $u1.EmailAddress, $u3, $u1.DisplayName, $u1.EmailAddress, $u3)
-            $Notice = "Password for $($u1.DisplayName) must be changed before $($u1.PasswordExpiry)."
-            Add-Content $LogFile  "$Notice Email was sent to $($u1.EmailAddress) on $Now"
+            -SmtpServer $smtpsettings["smtp_server"] -Port $smtpsettings["smtp_port"] `
+            -To $t_user.EmailAddress -From $smtpsettings["from"] `
+            -Subject $smtpsettings["subject"] -Attachment $Guide `
+            -Body $BodyEmail
+            
+            #Add info to log file
+            $Notice = "Password for $($t_user.DisplayName) must be changed before $($t_user.PasswordExpiry)."
+            Add-Content -Pass $LogFile -Value "$Notice Email was sent to $($t_user.EmailAddress) on $Now"
             Write-Output $Notice
         }
     }
 
-	#Debug mode
+	#Debug mode will send all email to your debug address instead to send it to users or to monitoring mailbox.
 	if ($DebugMode -eq "Yes"){ $MonitoringEmail = $DebugEmail }
+    
     #Send Email to the specified logging Email address with the attached logfile, containing all users that received the Notifiation Email on that day
     Write-Output "Sending logs to $MonitoringEmail"
 	
@@ -149,15 +175,6 @@ function Search-ExpiredPassword {
     Version:  1.1
     Author:   Enzo Gautier
 .EXAMPLE
-    $Splatting_ExpP = @{
-        DC = "SIN1-VWSAD-JP-1.kwjp.keywordsintl.com"
-        LogFileDirectory = "C:\Scripts\ExpiredPassword\Logs\" 
-        LogFileName = "kwjp" 
-        Attachment = "C:\Scripts\ExpiredPassword\O365_ChangePassword.png"
-        EmailHTML = "C:\Scripts\ExpiredPassword\kwjp_mail.html"
-        TimeZoneId = "Tokyo Standard Time"
-        MonitoringEmail = "egautier@keywordsstudios.com"
-        LogSubject = " KWJP - Password Expiration Notice - LOGs for $Now"
-    }
+    Check the Splatting.ps1 file.
     Search-ExpiredPassword @Splatting_ExpP
 #>
