@@ -172,7 +172,8 @@ function Search-ExpiredPassword {
 .OUTPUTS
     Email send to users with a password closed to expire + a log message sent to an email monitored by support.
 .NOTES
-    Version:  1.1
+    URL: https://github.com/enzo-g/Password-Expiration-Notice
+    Version:  1.0
     Author:   Enzo Gautier
 .EXAMPLE
     Check the Splatting.ps1 file.
