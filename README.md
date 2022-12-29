@@ -28,8 +28,8 @@ Please check at the file "Splatting.ps1".
 ## Credential vault
 
 * Instead of storing your password in clear text as you can see it in the file "Splatting.ps1". I recommend you reading those articles:
-*  [Use Credential Manager Module in PowerShell](https://www.delftstack.com/howto/powershell/use-credential-manager-in-powershell/)
-*  [SecretManagement and SecretStore](https://devblogs.microsoft.com/powershell/secretmanagement-and-secretstore-are-generally-available/)
+* * [Use Credential Manager Module in PowerShell](https://www.delftstack.com/howto/powershell/use-credential-manager-in-powershell/)
+* * [SecretManagement and SecretStore](https://devblogs.microsoft.com/powershell/secretmanagement-and-secretstore-are-generally-available/)
 
 * Using Jenkins to run that script would allow you to store the credential needed within that script in a secure vault easely. Jenkisn can also be useful to have a nice graphical interface to schedule the exeuction of the script and see the results.
 
