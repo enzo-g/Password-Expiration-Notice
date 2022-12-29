@@ -15,6 +15,7 @@ Please check at the file "Splatting.ps1".
 ## Service accounts
 
 * A service account with enought rights to read the AD attributes "msDS-UserPasswordExpiryTimeComputed".
+  * Check that article on how to delegate rights on Active Directory. [Delegating Administrative Permissions in Active Directory](https://woshub.com/delegate-control-active-directory/)
 * A SMTP server to send emails to your user. You can either use a SMTP server configured for unauthenticated access, or one that need credentials.
 
 ## Documents
@@ -28,8 +29,8 @@ Please check at the file "Splatting.ps1".
 ## Credential vault
 
 * Instead of storing your password in clear text as you can see it in the file "Splatting.ps1". I recommend you reading those articles:
-* * [Use Credential Manager Module in PowerShell](https://www.delftstack.com/howto/powershell/use-credential-manager-in-powershell/)
-* * [SecretManagement and SecretStore](https://devblogs.microsoft.com/powershell/secretmanagement-and-secretstore-are-generally-available/)
+  * [Use Credential Manager Module in PowerShell](https://www.delftstack.com/howto/powershell/use-credential-manager-in-powershell/)
+  * [SecretManagement and SecretStore](https://devblogs.microsoft.com/powershell/secretmanagement-and-secretstore-are-generally-available/)
 
 * Using Jenkins to run that script would allow you to store the credential needed within that script in a secure vault easely. Jenkisn can also be useful to have a nice graphical interface to schedule the exeuction of the script and see the results.
 
@@ -43,20 +44,20 @@ Default value is "UTC".
 [timezoneinfo]::GetSystemTimeZones() | select displayname, id
 ```
 
-## Body Email
+## HTML Email
 
-BodyEmail is the variable that will contain the text sent to your end-users.
-Within that variable, you have 3 variables that you should use:
+The email has been tested and its working well to send emails even with japanase characters.
+
+The script is 'hardcoded' to inject the following value in that specific order into the HTML file.
 
 * $($t_user.DisplayName): It will display the name of the user (Enzo Gautier)
 * $($t_user.EmailAddress): It will display the email of the user ( enzo@example.com )
 * $ExpirationDate It will display the password expiration date of the user ( Friday 16/12/2022 14:09 GMT+9 )
 
+So if youd don't plan to use the file "Email_example.html" as it is. Make sure to edit the following line of the script to inject the parameters in the order that suit you the most.
+
 ```powershell
-    BodyEmail = "Dear $($t_user.DisplayName) , The password for your account $($t_user.EmailAddress) is due to expire on $ExpirationDate. `n
-    Please update your password by following, if needed, the detailed instructions available in attachment. `n
-    Failure to update your password may result in your account being locked out. `n 
-    Please contact your IT Helpdesk if you have any questions, thank you. `n
-    Best Regards, `n
-    Your IT team"
+    -BodyAsHtml ($html -f $t_user.DisplayName, $t_user.EmailAddress, $ExpirationDate)
 ```
+
+The logic is quite simple, in the HTML file, {0} will be replace by $t_user.DisplayName, {1} will be replace by $t_user.EmailAddress, etc.

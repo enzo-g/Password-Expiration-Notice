@@ -87,6 +87,9 @@ function Search-ExpiredPassword {
     $LogFile = $LogFileDirectory + $LogFileName + "_maillog" + $logdate + ".txt"
 	New-item $LogFile -Force
     
+    #Content of the email sent to the user
+    $html = Get-Content -encoding UTF8 -path $EmailHTML
+
     #Display the corresponding UTC of the timezone, in the email that we are sending to the user.
     $timez = (Get-TimeZone -Id $TimeZoneId).DisplayName
     $UTC = [regex]::match($timez,'(?<=\().+?(?=\))')
@@ -120,7 +123,7 @@ function Search-ExpiredPassword {
             -SmtpServer $smtpsettings["smtp_server"] -Port $smtpsettings["smtp_port"] `
             -To $t_user.EmailAddress -From $smtpsettings["from"] `
             -Subject $smtpsettings["subject"] -Attachment $Guide `
-            -Body $BodyEmail
+            -BodyAsHtml ($html -f $t_user.DisplayName, $t_user.EmailAddress, $ExpirationDate)
             
             #Add info to log file
             $Notice = "Password for $($t_user.DisplayName) must be changed before $($t_user.PasswordExpiry)."
@@ -159,11 +162,6 @@ function Search-ExpiredPassword {
     This script has been designed to be used for Keywordsintl.com infrastructure with credential injection from jenkins.
 .PARAMETER SearchBase
     If you want you can restrict the password expiration time research to a specific Users OU. If not precised, it will scan the whole domain.
-.PARAMETER LogFileDirectory
-    Enter directory in that format: "C:\Scripts\ExpiredPassword\Logs\"
-.PARAMETER TimeZoneiD
-    Enter the iD of the timezone of users to display their password expiration date with the proper hour in their timezone
-    You can find that Id with the command: Get-TimeZone -ListAvailable 
 .INPUTS
     Users to scan to find their password expiration date.
 .OUTPUTS
