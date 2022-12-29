@@ -50,8 +50,8 @@ The email has been tested and its working well to send emails even with japanase
 
 The script is 'hardcoded' to inject the following value in that specific order into the HTML file.
 
-* $($t_user.DisplayName): It will display the name of the user (Enzo Gautier)
-* $($t_user.EmailAddress): It will display the email of the user (enzo@example.com)
+* $t_user.DisplayName: It will display the name of the user (Enzo Gautier)
+* $t_user.EmailAddress: It will display the email of the user (enzo@example.com)
 * $ExpirationDate It will display the password expiration date of the user (Friday 16/12/2022 14:09 GMT+9)
 
 So if youd don't plan to use the file "Email_example.html" as it is. Make sure to edit the following line of the script to inject the parameters in the order that suit you the most.
