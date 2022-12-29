@@ -43,3 +43,20 @@ Default value is "UTC".
 [timezoneinfo]::GetSystemTimeZones() | select displayname, id
 ```
 
+## Body Email
+
+BodyEmail is the variable that will contain the text sent to your end-users.
+Within that variable, you have 3 variables that you should use:
+
+* $($t_user.DisplayName): It will display the name of the user (Enzo Gautier)
+* $($t_user.EmailAddress): It will display the email of the user ( enzo@example.com )
+* $ExpirationDate It will display the password expiration date of the user ( Friday 16/12/2022 14:09 GMT+9 )
+
+```powershell
+    BodyEmail = "Dear $($t_user.DisplayName) , The password for your account $($t_user.EmailAddress) is due to expire on $ExpirationDate. `n
+    Please update your password by following, if needed, the detailed instructions available in attachment. `n
+    Failure to update your password may result in your account being locked out. `n 
+    Please contact your IT Helpdesk if you have any questions, thank you. `n
+    Best Regards, `n
+    Your IT team"
+```

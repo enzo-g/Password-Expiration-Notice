@@ -87,9 +87,6 @@ function Search-ExpiredPassword {
     $LogFile = $LogFileDirectory + $LogFileName + "_maillog" + $logdate + ".txt"
 	New-item $LogFile -Force
     
-    #Content of the email sent to the user
-    $html = Get-Content -encoding UTF8 -path $EmailHTML
-
     #Display the corresponding UTC of the timezone, in the email that we are sending to the user.
     $timez = (Get-TimeZone -Id $TimeZoneId).DisplayName
     $UTC = [regex]::match($timez,'(?<=\().+?(?=\))')
@@ -113,7 +110,7 @@ function Search-ExpiredPassword {
             $time1 = [System.TimeZoneInfo]::ConvertTimeBySystemTimeZoneId($t_user.PasswordExpiry, $TimeZoneId)
             
             #Format the date as we want it to be displayed for end-users
-            $time2 = $time1.ToString("dddd dd/MM/yyyy HH:mm '$UTCvalue'")
+            $ExpirationDate = $time1.ToString("dddd dd/MM/yyyy HH:mm '$UTCvalue'")
             
             #Debug 
             if ($DebugMode -eq "Yes"){ $t_user.EmailAddress = $DebugEmail }

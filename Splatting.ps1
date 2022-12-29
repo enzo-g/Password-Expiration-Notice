@@ -17,7 +17,7 @@ $Splatting_ExpP = @{
     SA_Username = "mySAusername"
     SA_Password = ConvertTo-SecureString "YourPassword" -AsPlainText -Force
     #BodyEmail
-    BodyEmail = "Dear $($t_user.DisplayName) , The password for your account $($t_user.EmailAddress) is due to expire on $time2. `n
+    BodyEmail = "Dear $($t_user.DisplayName) , The password for your account $($t_user.EmailAddress) is due to expire on $ExpirationDate. `n
     Please update your password by following, if needed, the detailed instructions available in attachment. `n
     Failure to update your password may result in your account being locked out. `n 
     Please contact your IT Helpdesk if you have any questions, thank you. `n
